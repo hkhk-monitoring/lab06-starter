@@ -4,7 +4,7 @@ Juhend: <https://hkhk-monitoring.github.io/monitoring/week06/lab/>
 
 Kirjuta vastused `_vastus_` asemele, ühe-kahe lausega. Compose'i projekt, reeglid ja töölaud lähevad kausta `konf/`, tõendid kausta `logid/`.
 
-## Osa 7 · Kokkuvõte
+## Osa 8 · Kokkuvõte
 
 **Mitu minutit läks osas 6.1 node_exporteri peatamisest Discordi teateni? Millest see aeg koosnes?**
 
