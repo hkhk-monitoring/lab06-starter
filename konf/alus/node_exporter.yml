@@ -1,0 +1,73 @@
+- name: node_exporter jälgitavatesse masinatesse
+  hosts: all
+  become: true
+  vars:
+    ne_version: "1.12.1"
+    ne_name: "node_exporter-{{ ne_version }}.linux-amd64"
+    ne_url: "https://github.com/prometheus/node_exporter/releases/download/v{{ ne_version }}"
+  tasks:
+    - name: Väljalase alla koos kontrollsummaga
+      ansible.builtin.get_url:
+        url: "{{ ne_url }}/{{ ne_name }}.tar.gz"
+        dest: "/tmp/{{ ne_name }}.tar.gz"
+        checksum: "sha256:{{ ne_url }}/sha256sums.txt"
+
+    - name: Arhiiv lahti
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ ne_name }}.tar.gz"
+        dest: /tmp
+        remote_src: true
+        creates: "/tmp/{{ ne_name }}/node_exporter"
+
+    - name: Programm kausta /usr/local/bin
+      ansible.builtin.copy:
+        src: "/tmp/{{ ne_name }}/node_exporter"
+        dest: /usr/local/bin/node_exporter
+        remote_src: true
+        mode: "0755"
+
+    - name: Süsteemikasutaja node_exporter
+      ansible.builtin.user:
+        name: node_exporter
+        system: true
+        shell: /sbin/nologin
+        create_home: false
+
+    - name: Unit-fail, sama sisu mis osas 2
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/node_exporter.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus node_exporter
+          After=network-online.target
+
+          [Service]
+          User=node_exporter
+          ExecStart=/usr/local/bin/node_exporter
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: node_exporter uuesti
+
+    - name: Teenus töötab ja käivitub koos masinaga
+      ansible.builtin.systemd_service:
+        name: node_exporter
+        state: started
+        enabled: true
+        daemon_reload: true
+
+    - name: Port 9100 tulemüüris
+      ansible.posix.firewalld:
+        port: 9100/tcp
+        permanent: true
+        immediate: true
+        state: enabled
+
+  handlers:
+    - name: node_exporter uuesti
+      ansible.builtin.systemd_service:
+        name: node_exporter
+        state: restarted
+        daemon_reload: true
